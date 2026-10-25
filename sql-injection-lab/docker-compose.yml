@@ -3,24 +3,36 @@ services:
   # MySQL: база данных с флагами (таблица secrets)
   # ------------------------------------------------------------
   db:
-    image: mysql:8.0
+    image: mysql:8.4
     container_name: ctf_sql_lab_db
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-ctf_root_pass}
       MYSQL_DATABASE: ctf_lab
-    command: >
-      --default-authentication-plugin=mysql_native_password
+    # 8.0 EOL (апрель 2026): native password plugin убран как default.
+    # mysql-connector-python 8.4 умеет caching_sha2_password.
+    # innodb-buffer-pool уменьшен, иначе Docker Desktop на Windows
+    # часто убивает mysqld (exit 137) на дефолтных 128–512 МБ RAM.
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb-buffer-pool-size=96M
+      - --innodb-log-buffer-size=8M
+      - --max-connections=50
+      - --performance-schema=OFF
+      - --skip-log-bin
     volumes:
-      - ./db/init:/docker-entrypoint-initdb.d:ro   # скрипты создания БД
+      - ./db/init:/docker-entrypoint-initdb.d:ro
       - db_data:/var/lib/mysql
     ports:
-      - "${DB_PORT:-3306}:3306"                   # доступ к БД для атак/патчей
+      - "${DB_PORT:-3306}:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASS:-ctf_root_pass}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 30
+      start_period: 45s
+    mem_limit: 512m
 
   # ------------------------------------------------------------
   # Web: уязвимое Flask-приложение (код в ./app, монтируется —
@@ -39,12 +51,23 @@ services:
       DB_PASS: ${DB_ROOT_PASS:-ctf_root_pass}
       DB_NAME: ctf_lab
       APP_SECRET_KEY: ${APP_SECRET_KEY:-ctf-insecure-dev-key}
+      APP_PORT: "8000"
     volumes:
-      - ./app:/srv/app             # live-patch: меняете app.py -> рестарт контейнера
+      - ./app:/srv/app
     ports:
       - "${WEB_PORT:-8000}:8000"
-    command: >
-      sh -c "pip install --no-cache-dir -r requirements.txt && python app.py"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
 volumes:
   db_data:
