@@ -1,0 +1,50 @@
+services:
+  # ------------------------------------------------------------
+  # MySQL: база данных с флагами (таблица secrets)
+  # ------------------------------------------------------------
+  db:
+    image: mysql:8.0
+    container_name: ctf_sql_lab_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-ctf_root_pass}
+      MYSQL_DATABASE: ctf_lab
+    command: >
+      --default-authentication-plugin=mysql_native_password
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d:ro   # скрипты создания БД
+      - db_data:/var/lib/mysql
+    ports:
+      - "${DB_PORT:-3306}:3306"                   # доступ к БД для атак/патчей
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASS:-ctf_root_pass}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # ------------------------------------------------------------
+  # Web: уязвимое Flask-приложение (код в ./app, монтируется —
+  # защитники могут патчить на лету без пересборки образа)
+  # ------------------------------------------------------------
+  web:
+    build: ./app
+    container_name: ctf_sql_lab_web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASS: ${DB_ROOT_PASS:-ctf_root_pass}
+      DB_NAME: ctf_lab
+      APP_SECRET_KEY: ${APP_SECRET_KEY:-ctf-insecure-dev-key}
+    volumes:
+      - ./app:/srv/app             # live-patch: меняете app.py -> рестарт контейнера
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    command: >
+      sh -c "pip install --no-cache-dir -r requirements.txt && python app.py"
+
+volumes:
+  db_data:
