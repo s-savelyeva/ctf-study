@@ -28,6 +28,23 @@ python run_all.py --host 0.0.0.0
 
 Откройте `http://<host>:8001` (`:8002`, `:8003`) — интерфейс сам подскажет эндпоинты.
 
+### Docker Compose (рекомендуется для A/D)
+
+Каждый сервис работает в **своём контейнере** (изоляция: перезапуск/патч одного
+не трогает остальные), внутри — gunicorn, снаружи привычные порты 8001–8003:
+
+```bash
+cd jwt-ad-ctf
+cp .env.example .env        # задайте свои флаги (опционально)
+docker compose up -d --build
+
+docker compose ps           # статус + healthchecks (/healthz)
+docker compose logs -f service-bruteforce
+docker compose down         # остановка
+```
+
+Один конкретный сервис: `docker compose up -d --build service-rs256`.
+
 ### Флаги
 
 Задаются через окружение (для A/D их выдаёт orgserver/flow):
@@ -89,7 +106,9 @@ jwt-ad-ctf/
 │   └── static/{css,js}      # тема + JWT Lab (vanilla JS, Web Crypto)
 ├── scripts/                 # 3 готовых эксплойта + wordlist + run_services.sh
 ├── run_all.py               # dev-запуск всех сервисов
-├── Dockerfile
+├── Dockerfile               # образ python:3.12-slim + gunicorn
+├── docker-compose.yml       # 3 сервиса = 3 контейнера (:8001/:8002/:8003)
+├── .env.example             # шаблон флагов ALG_NONE_FLAG / BRUTEFORCE_FLAG / RS256_FLAG
 └── requirements.txt
 ```
 
