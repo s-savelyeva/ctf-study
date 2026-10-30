@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Вход — {{ challenge }}{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>Сервис: {{ challenge }}</h1>
+    <p class="muted">Войдите как обычный пользователь. Задача — получить роль <code>admin</code>.</p>
+
+    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+
+    <form method="POST">
+        <input type="text" name="username" placeholder="Имя пользователя" required autofocus>
+        <button type="submit">Войти</button>
+    </form>
+
+    {% if challenge == 'confusion' %}
+        <div class="hint">💡 Публичный ключ: <a href="/challenge/confusion/pubkey">/challenge/confusion/pubkey</a></div>
+    {% elif challenge == 'weak' %}
+        <div class="hint">💡 Секрет — словарное слово. <a href="/static/wordlist.txt">Wordlist</a> (hashcat mode 16500)</div>
+    {% elif challenge == 'none' %}
+        <div class="hint">💡 Попробуйте изменить <code>alg</code> в заголовке токена.</div>
+    {% endif %}
+
+    <a href="/" class="back">← На главную</a>
+</div>
+{% endblock %}

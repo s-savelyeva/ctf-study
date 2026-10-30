@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Дашборд — {{ challenge }}{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>👋 {{ payload.username }}</h1>
+    <p>Роль: <span class="role role-{{ payload.role }}">{{ payload.role }}</span></p>
+
+    <div class="token-box">
+        <h3>Ваш JWT</h3>
+        <pre>{{ token }}</pre>
+    </div>
+
+    <div class="actions">
+        <a href="/challenge/{{ challenge }}/admin" class="btn">Перейти в /admin</a>
+    </div>
+
+    <div class="hint">
+        💡 Cookie: <code>token_{{ challenge }}</code>. Цель — подделать токен с <code>"role":"admin"</code>.
+    </div>
+    <a href="/" class="back">← На главную</a>
+</div>
+{% endblock %}

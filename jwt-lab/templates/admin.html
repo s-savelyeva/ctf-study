@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Admin — {{ challenge }}{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>🛡️ Admin — {{ challenge }}</h1>
+
+    {% if error %}
+        <div class="alert">{{ error }}</div>
+        {% if payload %}
+        <div class="token-box">
+            <h3>Ваш payload</h3>
+            <pre>{{ payload | tojson(indent=2) }}</pre>
+        </div>
+        {% endif %}
+    {% else %}
+        <div class="success">
+            <h2>🏁 Флаг</h2>
+            <pre class="flag">{{ flag }}</pre>
+        </div>
+    {% endif %}
+
+    <a href="/" class="back">← На главную</a>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+services:
+  jwt-ctf:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      FLAG_NONE: "${FLAG_NONE:-CTF{alg_none_signature_bypass}}"
+      FLAG_WEAK: "${FLAG_WEAK:-CTF{weak_hmac_secret_cracked}}"
+      FLAG_CONFUSION: "${FLAG_CONFUSION:-CTF{rs256_to_hs256_confusion}}"
+      STATE_DIR: "/app/state"
+    volumes:
+      - jwt_state:/app/state
+    restart: unless-stopped
+
+volumes:
+  jwt_state:

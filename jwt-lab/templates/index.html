@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+    <h1>Три уязвимости JWT</h1>
+    <p>Три независимых сервиса. Три флага. Получите доступ к админ-панели каждого.</p>
+</section>
+
+<div class="grid">
+    <a href="/challenge/none" class="card card-none">
+        <div class="card-badge">01</div>
+        <h2>None Algorithm</h2>
+        <p>Подделка токена без подписи через <code>alg:none</code>.</p>
+        <span class="cta">Начать →</span>
+    </a>
+    <a href="/challenge/weak" class="card card-weak">
+        <div class="card-badge">02</div>
+        <h2>Weak Secret</h2>
+        <p>Брутфорс слабого HMAC-секрета через hashcat / jwt_tool.</p>
+        <span class="cta">Начать →</span>
+    </a>
+    <a href="/challenge/confusion" class="card card-confusion">
+        <div class="card-badge">03</div>
+        <h2>Key Confusion</h2>
+        <p>Подмена RS256 → HS256 через публичный ключ как HMAC-секрет.</p>
+        <span class="cta">Начать →</span>
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+password
+123456
+qwerty
+admin
+letmein
+secret
+supersecret
+changeme
+jwt_secret
+s3cr3t
+hunter2
