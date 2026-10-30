@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru" data-service="{{ service.id }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ service.name }} · JWT CTF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow--a"></div>
+  <div class="bg-glow bg-glow--b"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand__logo">⬡</span>
+      <div>
+        <h1 class="brand__title">JWT<span class="accent">ARENA</span></h1>
+        <p class="brand__subtitle">Attack / Defense CTF · уязвимости JSON Web Token</p>
+      </div>
+    </div>
+    <nav class="service-nav">
+      <a class="chip {{ 'chip--active' if service.id == 'alg-none' }}" href="//" data-port="8001">alg:none</a>
+      <a class="chip {{ 'chip--active' if service.id == 'bruteforce' }}" href="//" data-port="8002">Брутфорс</a>
+      <a class="chip {{ 'chip--active' if service.id == 'rs256-hs256' }}" href="//" data-port="8003">RS256→HS256</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- Карточка сервиса -->
+    <section class="hero card">
+      <div class="hero__left">
+        <div class="hero__badges">
+          <span class="badge badge--vuln">⚠ {{ service.vuln }}</span>
+          <span class="badge badge--port">PORT :{{ service.port }}</span>
+          <span class="badge badge--status" id="health-badge">● проверка…</span>
+        </div>
+        <h2 class="hero__title">{{ service.name }}</h2>
+        <p class="hero__desc">{{ service.description }}</p>
+      </div>
+      <div class="hero__right">
+        <div class="endpoints">
+          <h3 class="endpoints__title">Эндпоинты</h3>
+          <ul id="endpoint-list" class="endpoints__list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <!-- Левая колонка: JWT Lab -->
+      <section class="card panel">
+        <div class="panel__head">
+          <h3 class="panel__title"><span class="panel__icon">🧪</span> JWT Lab — декодер и конструктор</h3>
+          <button class="btn btn--ghost" id="btn-sample">Загрузить токен сервиса</button>
+        </div>
+
+        <label class="field">
+          <span class="field__label">Token</span>
+          <textarea id="token-input" class="token-area mono" rows="5"
+            spellcheck="false" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"></textarea>
+        </label>
+
+        <div class="jwt-preview mono" id="jwt-preview"></div>
+
+        <div class="tabs">
+          <button class="tab tab--active" data-tab="header">Header</button>
+          <button class="tab" data-tab="payload">Payload</button>
+        </div>
+
+        <label class="field">
+          <div class="field__row">
+            <span class="field__label" id="json-label">HEADER (JSON)</span>
+            <button class="btn btn--tiny" id="btn-copy-json">Копировать</button>
+          </div>
+          <textarea id="json-editor" class="code-area mono" rows="8" spellcheck="false"></textarea>
+        </label>
+
+        <div class="rebuild">
+          <button class="btn btn--primary" id="btn-rebuild">⟳ Пересобрать токен</button>
+          <span class="rebuild__hint">подпись останется прежней — ровно так и работают эти атаки</span>
+        </div>
+
+        <hr class="divider">
+
+        <div class="sign-section">
+          <h4 class="sign-title">Переподписать (для HS256-атак)</h4>
+          <div class="sign-row">
+            <input id="secret-input" class="input mono" type="text" placeholder="секрет / публичный ключ PEM">
+            <button class="btn btn--secondary" id="btn-sign">Подписать HS256</button>
+          </div>
+          <details class="pubkey">
+            <summary>Вставить публичный ключ (для RS256 → HS256)</summary>
+            <textarea id="pubkey-input" class="code-area mono" rows="6" spellcheck="false"
+              placeholder="-----BEGIN PUBLIC KEY-----&#10;…&#10;-----END PUBLIC KEY-----"></textarea>
+            <button class="btn btn--tiny" id="btn-pubkey-use">Использовать как секрет ↑</button>
+          </details>
+        </div>
+      </section>
+
+      <!-- Правая колонка: запросы + флаг -->
+      <div class="col-right">
+        <section class="card panel">
+          <div class="panel__head">
+            <h3 class="panel__title"><span class="panel__icon">📡</span> Отправить запрос</h3>
+          </div>
+          <div class="req-row">
+            <select id="endpoint-select" class="input"></select>
+            <button class="btn btn--primary" id="btn-send">Отправить ▶</button>
+          </div>
+          <label class="checkbox">
+            <input type="checkbox" id="use-current-token" checked>
+            <span>использовать текущий токен из JWT Lab (Authorization: Bearer)</span>
+          </label>
+          <pre id="response-view" class="response mono">// ответ появится здесь</pre>
+        </section>
+
+        <section class="card flag-card" id="flag-card">
+          <div class="flag-card__head">
+            <h3 class="panel__title"><span class="panel__icon">🚩</span> Флаг</h3>
+            <button class="btn btn--tiny" id="btn-copy-flag" hidden>Копировать</button>
+          </div>
+          <div class="flag-display mono" id="flag-display">— ещё не получен —</div>
+          <p class="flag-note">Флаг появляется, когда сервис отвечает <code>{"ok": true, "flag": …}</code>.</p>
+        </section>
+
+        <section class="card panel theory">
+          <div class="panel__head">
+            <h3 class="panel__title"><span class="panel__icon">📚</span> Как это чинить (patch)</h3>
+          </div>
+          <div id="theory-body"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <span>JWT ARENA · A/D CTF service · Flask + vanilla JS</span>
+    <span class="mono">u_{{ service.id }}</span>
+  </footer>
+
+  <script>window.__SERVICE__ = {{ service | tojson }};</script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
